@@ -1,52 +1,101 @@
 
-<svg width="420" height="260" xmlns="http://www.w3.org/2000/svg">
-<style>
-text { fill:#00ff9c; font-family:monospace; font-size:12px }
-rect { fill:#00ff9c }
-</style>
-<rect width="100%" height="100%" rx="16" fill="#050505"/>
+<svg width="460" height="300" viewBox="0 0 460 300"
+     xmlns="http://www.w3.org/2000/svg">
 
-    <text x="24" y="36">Morning</text>
-    <rect x="120" y="27" width="2" height="10" rx="5"/>
-    <text x="132" y="36">0</text>
+<defs>
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+    <feMerge>
+      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+</defs>
+
+<style>
+  .bg {
+    fill: #050607;
+    stroke: #00ff9c;
+    stroke-width: 1;
+    filter: drop-shadow(0 0 12px #00ff9c55);
+  }
+
+  .label {
+    fill: #00ff9c;
+    font-family: monospace;
+    font-size: 12px;
+  }
+
+  .value {
+    fill: #0a0a0a;
+    font-family: monospace;
+    font-size: 11px;
+  }
+
+  .bar-bg {
+    fill: #0f1a17;
+  }
+
+  .bar {
+    fill: #00ff9c;
+    filter: url(#glow);
+  }
+</style>
+
+<rect class="bg" x="5" y="5" rx="18" ry="18" width="450" height="290"/>
+
+    <text class="label" x="28" y="42">Morning</text>
+    <rect class="bar-bg" x="120" y="32" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="32" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="43">0</text>
     
-    <text x="24" y="58">Daytime</text>
-    <rect x="120" y="49" width="2" height="10" rx="5"/>
-    <text x="132" y="58">0</text>
+    <text class="label" x="28" y="68">Daytime</text>
+    <rect class="bar-bg" x="120" y="58" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="58" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="69">0</text>
     
-    <text x="24" y="80">Evening</text>
-    <rect x="120" y="71" width="2" height="10" rx="5"/>
-    <text x="132" y="80">0</text>
+    <text class="label" x="28" y="94">Evening</text>
+    <rect class="bar-bg" x="120" y="84" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="84" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="95">0</text>
     
-    <text x="24" y="102">Night</text>
-    <rect x="120" y="93" width="2" height="10" rx="5"/>
-    <text x="132" y="102">0</text>
+    <text class="label" x="28" y="120">Night</text>
+    <rect class="bar-bg" x="120" y="110" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="110" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="121">0</text>
     
-    <text x="24" y="134">Monday</text>
-    <rect x="120" y="125" width="2" height="10" rx="5"/>
-    <text x="132" y="134">0</text>
+    <text class="label" x="28" y="158">Monday</text>
+    <rect class="bar-bg" x="120" y="148" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="148" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="159">0</text>
     
-    <text x="24" y="156">Tuesday</text>
-    <rect x="120" y="147" width="2" height="10" rx="5"/>
-    <text x="132" y="156">0</text>
+    <text class="label" x="28" y="184">Tuesday</text>
+    <rect class="bar-bg" x="120" y="174" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="174" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="185">0</text>
     
-    <text x="24" y="178">Wednesday</text>
-    <rect x="120" y="169" width="2" height="10" rx="5"/>
-    <text x="132" y="178">0</text>
+    <text class="label" x="28" y="210">Wednesday</text>
+    <rect class="bar-bg" x="120" y="200" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="200" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="211">0</text>
     
-    <text x="24" y="200">Thursday</text>
-    <rect x="120" y="191" width="2" height="10" rx="5"/>
-    <text x="132" y="200">0</text>
+    <text class="label" x="28" y="236">Thursday</text>
+    <rect class="bar-bg" x="120" y="226" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="226" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="237">0</text>
     
-    <text x="24" y="222">Friday</text>
-    <rect x="120" y="213" width="2" height="10" rx="5"/>
-    <text x="132" y="222">0</text>
+    <text class="label" x="28" y="262">Friday</text>
+    <rect class="bar-bg" x="120" y="252" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="252" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="263">0</text>
     
-    <text x="24" y="244">Saturday</text>
-    <rect x="120" y="235" width="2" height="10" rx="5"/>
-    <text x="132" y="244">0</text>
+    <text class="label" x="28" y="288">Saturday</text>
+    <rect class="bar-bg" x="120" y="278" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="278" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="289">0</text>
     
-    <text x="24" y="266">Sunday</text>
-    <rect x="120" y="257" width="2" height="10" rx="5"/>
-    <text x="132" y="266">0</text>
+    <text class="label" x="28" y="314">Sunday</text>
+    <rect class="bar-bg" x="120" y="304" width="240" height="14" rx="7"/>
+    <rect class="bar" x="120" y="304" width="4" height="14" rx="7"/>
+    <text class="value" x="134" y="315">0</text>
     </svg>
