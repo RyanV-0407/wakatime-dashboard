@@ -2,26 +2,21 @@ import requests
 import os
 from collections import defaultdict
 
-# ========== CONFIG ==========
+# ================= CONFIG =================
 API_KEY = os.environ.get("WAKATIME_API_KEY")
 if not API_KEY:
     raise RuntimeError("WAKATIME_API_KEY not found")
 
-HEADERS = {
-    "Authorization": f"Basic {API_KEY}"
-}
-
+HEADERS = {"Authorization": f"Basic {API_KEY}"}
 URL = "https://wakatime.com/api/v1/users/current/stats/last_7_days"
 
-# ========== FETCH DATA ==========
-response = requests.get(URL, headers=HEADERS)
-response.raise_for_status()
-data = response.json().get("data", {})
+# ================= FETCH =================
+data = requests.get(URL, headers=HEADERS).json().get("data", {})
 
 time_blocks = defaultdict(int)
 weekdays = defaultdict(int)
 
-# ========== TIME OF DAY ==========
+# -------- Phase of Day --------
 for s in data.get("summaries", []):
     try:
         hour = int(s["range"]["start"].split("T")[1][:2])
@@ -38,44 +33,61 @@ for s in data.get("summaries", []):
     else:
         time_blocks["Night"] += minutes
 
-# ========== WEEKDAYS ==========
+# -------- Days of Week --------
 for d in data.get("days", []):
     try:
         weekdays[d["name"]] = int(d["total_seconds"] / 60)
     except Exception:
         continue
 
-# ========== SVG BAR ==========
-def bar(y, label, value, scale=2):
-    width = min(max(value // scale, 4), 240)
+# ================= SVG BAR =================
+def bar(y, label, value, scale=2, delay=0):
+    width = min(max(value // scale, 4), 260)
     return f"""
-    <text class="label" x="28" y="{y}">{label}</text>
-    <rect class="bar-bg" x="120" y="{y-10}" width="240" height="14" rx="7"/>
-    <rect class="bar" x="120" y="{y-10}" width="{width}" height="14" rx="7"/>
-    <text class="value" x="{130 + width}" y="{y+1}">{value}</text>
+    <text class="label" x="30" y="{y}">{label}</text>
+
+    <rect class="bar-bg" x="150" y="{y-11}" width="260" height="14" rx="7"/>
+
+    <rect class="bar" x="150" y="{y-11}" height="14" rx="7">
+      <animate attributeName="width"
+               from="0"
+               to="{width}"
+               dur="0.8s"
+               begin="{delay}s"
+               fill="freeze"/>
+    </rect>
+
+    <text class="value" x="{160 + width}" y="{y+1}">{value}</text>
     """
 
-# ========== SVG BUILD ==========
+# ================= SVG BUILD =================
 svg = """
-<svg width="460" height="300" viewBox="0 0 460 300"
+<svg width="520" height="360" viewBox="0 0 520 360"
      xmlns="http://www.w3.org/2000/svg">
 
 <defs>
   <filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+    <feGaussianBlur stdDeviation="4" result="blur"/>
     <feMerge>
-      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="blur"/>
       <feMergeNode in="SourceGraphic"/>
     </feMerge>
   </filter>
 </defs>
 
 <style>
-  .bg {
+  .frame {
     fill: #050607;
     stroke: #00ff9c;
     stroke-width: 1;
-    filter: drop-shadow(0 0 12px #00ff9c55);
+    filter: drop-shadow(0 0 16px #00ff9c66);
+  }
+
+  .title {
+    fill: #00ff9c;
+    font-family: monospace;
+    font-size: 14px;
+    letter-spacing: 1px;
   }
 
   .label {
@@ -98,25 +110,40 @@ svg = """
     fill: #00ff9c;
     filter: url(#glow);
   }
+
+  .divider {
+    stroke: #00ff9c44;
+    stroke-width: 1;
+  }
 </style>
 
-<rect class="bg" x="5" y="5" rx="18" ry="18" width="450" height="290"/>
+<rect class="frame" x="6" y="6" rx="20" ry="20" width="508" height="348"/>
+
+<text class="title" x="30" y="36">PHASE OF DAY</text>
 """
 
-y = 42
+y = 62
+delay = 0.1
 for k in ["Morning", "Daytime", "Evening", "Night"]:
-    svg += bar(y, k, time_blocks[k], scale=4)
-    y += 26
+    svg += bar(y, k, time_blocks[k], scale=4, delay=delay)
+    y += 28
+    delay += 0.08
 
-y += 12
+svg += """
+<line class="divider" x1="30" y1="190" x2="490" y2="190"/>
+<text class="title" x="30" y="218">DAYS OF WEEK</text>
+"""
+
+y = 244
 for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-    svg += bar(y, d, weekdays[d], scale=2)
-    y += 26
+    svg += bar(y, d, weekdays[d], scale=2, delay=delay)
+    y += 28
+    delay += 0.06
 
 svg += "</svg>"
 
-# ========== WRITE FILE ==========
+# ================= WRITE =================
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✨ Neon WakaTime dashboard generated (stats.svg)")
+print("🔥 Animated WakaTime dashboard generated")
