@@ -40,53 +40,54 @@ for d in data.get("days", []):
     except Exception:
         continue
 
-# ================= SVG BAR =================
-def bar(y, label, value, scale=2, delay=0):
-    width = min(max(value // scale, 4), 260)
+
+# ================= HELPERS =================
+def percent(value, total):
+    return int((value / total) * 100) if total > 0 else 0
+
+
+def bar(y, label, value, total, scale=2, delay=0):
+    width = min(max(value // scale, 2), 260)
+    pct = percent(value, total)
+
     return f"""
     <text class="label" x="30" y="{y}">{label}</text>
 
-    <rect class="bar-bg" x="150" y="{y-11}" width="260" height="14" rx="7"/>
+    <rect class="bar-bg" x="160" y="{y-10}" width="260" height="12" rx="6"/>
 
-    <rect class="bar" x="150" y="{y-11}" height="14" rx="7">
+    <rect class="bar" x="160" y="{y-10}" height="12" rx="6">
       <animate attributeName="width"
                from="0"
                to="{width}"
-               dur="0.8s"
+               dur="0.6s"
                begin="{delay}s"
                fill="freeze"/>
     </rect>
 
-    <text class="value" x="{160 + width}" y="{y+1}">{value}</text>
+    <text class="value" x="430" y="{y+1}">{pct}%</text>
     """
 
-# ================= SVG BUILD =================
+
+# ================= TOTALS =================
+total_day = sum(time_blocks.values())
+total_week = sum(weekdays.values())
+
+# ================= SVG =================
 svg = """
 <svg width="520" height="360" viewBox="0 0 520 360"
      xmlns="http://www.w3.org/2000/svg">
 
-<defs>
-  <filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="blur"/>
-    <feMerge>
-      <feMergeNode in="blur"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-</defs>
-
 <style>
   .frame {
     fill: #050607;
-    stroke: #00ff9c;
+    stroke: #00ff9c44;
     stroke-width: 1;
-    filter: drop-shadow(0 0 16px #00ff9c66);
   }
 
   .title {
     fill: #00ff9c;
     font-family: monospace;
-    font-size: 14px;
+    font-size: 13px;
     letter-spacing: 1px;
   }
 
@@ -97,9 +98,10 @@ svg = """
   }
 
   .value {
-    fill: #0a0a0a;
+    fill: #9fffe0;
     font-family: monospace;
     font-size: 11px;
+    text-anchor: end;
   }
 
   .bar-bg {
@@ -108,37 +110,36 @@ svg = """
 
   .bar {
     fill: #00ff9c;
-    filter: url(#glow);
   }
 
   .divider {
-    stroke: #00ff9c44;
+    stroke: #00ff9c33;
     stroke-width: 1;
   }
 </style>
 
-<rect class="frame" x="6" y="6" rx="20" ry="20" width="508" height="348"/>
+<rect class="frame" x="6" y="6" rx="18" ry="18" width="508" height="348"/>
 
 <text class="title" x="30" y="36">PHASE OF DAY</text>
 """
 
 y = 62
-delay = 0.1
+delay = 0.05
 for k in ["Morning", "Daytime", "Evening", "Night"]:
-    svg += bar(y, k, time_blocks[k], scale=4, delay=delay)
-    y += 28
-    delay += 0.08
+    svg += bar(y, k, time_blocks[k], total_day, scale=4, delay=delay)
+    y += 26
+    delay += 0.05
 
 svg += """
-<line class="divider" x1="30" y1="190" x2="490" y2="190"/>
-<text class="title" x="30" y="218">DAYS OF WEEK</text>
+<line class="divider" x1="30" y1="182" x2="490" y2="182"/>
+<text class="title" x="30" y="210">DAYS OF WEEK</text>
 """
 
-y = 244
+y = 236
 for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-    svg += bar(y, d, weekdays[d], scale=2, delay=delay)
-    y += 28
-    delay += 0.06
+    svg += bar(y, d, weekdays[d], total_week, scale=2, delay=delay)
+    y += 26
+    delay += 0.04
 
 svg += "</svg>"
 
@@ -146,4 +147,4 @@ svg += "</svg>"
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("🔥 Animated WakaTime dashboard generated")
+print("✅ Sharp, percentage-based WakaTime dashboard generated")
