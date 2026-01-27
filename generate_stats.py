@@ -2,7 +2,6 @@ import requests
 import os
 from collections import defaultdict
 
-# ================= CONFIG =================
 API_KEY = os.environ.get("WAKATIME_API_KEY")
 if not API_KEY:
     raise RuntimeError("WAKATIME_API_KEY not found")
@@ -10,7 +9,6 @@ if not API_KEY:
 HEADERS = {"Authorization": f"Basic {API_KEY}"}
 URL = "https://wakatime.com/api/v1/users/current/stats/last_7_days"
 
-# ================= FETCH =================
 data = requests.get(URL, headers=HEADERS).json().get("data", {})
 
 time_blocks = defaultdict(int)
@@ -41,9 +39,8 @@ for d in data.get("days", []):
         continue
 
 
-# ================= HELPERS =================
 def percent(value, total):
-    return int((value / total) * 100) if total > 0 else 0
+    return round((value / total) * 100) if total > 0 else 0
 
 
 def bar(y, label, value, total, scale=2, delay=0):
@@ -52,9 +49,7 @@ def bar(y, label, value, total, scale=2, delay=0):
 
     return f"""
     <text class="label" x="30" y="{y}">{label}</text>
-
     <rect class="bar-bg" x="160" y="{y-10}" width="260" height="12" rx="6"/>
-
     <rect class="bar" x="160" y="{y-10}" height="12" rx="6">
       <animate attributeName="width"
                from="0"
@@ -63,62 +58,28 @@ def bar(y, label, value, total, scale=2, delay=0):
                begin="{delay}s"
                fill="freeze"/>
     </rect>
-
-    <text class="value" x="430" y="{y+1}">{pct}%</text>
+    <text class="value" x="450" y="{y+1}">{pct}%</text>
     """
 
 
-# ================= TOTALS =================
 total_day = sum(time_blocks.values())
 total_week = sum(weekdays.values())
 
-# ================= SVG =================
 svg = """
-<svg width="520" height="360" viewBox="0 0 520 360"
+<svg width="520" height="420" viewBox="0 0 520 420"
      xmlns="http://www.w3.org/2000/svg">
 
 <style>
-  .frame {
-    fill: #050607;
-    stroke: #00ff9c44;
-    stroke-width: 1;
-  }
-
-  .title {
-    fill: #00ff9c;
-    font-family: monospace;
-    font-size: 13px;
-    letter-spacing: 1px;
-  }
-
-  .label {
-    fill: #00ff9c;
-    font-family: monospace;
-    font-size: 12px;
-  }
-
-  .value {
-    fill: #9fffe0;
-    font-family: monospace;
-    font-size: 11px;
-    text-anchor: end;
-  }
-
-  .bar-bg {
-    fill: #0f1a17;
-  }
-
-  .bar {
-    fill: #00ff9c;
-  }
-
-  .divider {
-    stroke: #00ff9c33;
-    stroke-width: 1;
-  }
+  .frame { fill:#050607; stroke:#00ff9c44; stroke-width:1; }
+  .title { fill:#00ff9c; font-family:monospace; font-size:13px; letter-spacing:1px; }
+  .label { fill:#00ff9c; font-family:monospace; font-size:12px; }
+  .value { fill:#9fffe0; font-family:monospace; font-size:11px; text-anchor:end; }
+  .bar-bg { fill:#0f1a17; }
+  .bar { fill:#00ff9c; }
+  .divider { stroke:#00ff9c33; stroke-width:1; }
 </style>
 
-<rect class="frame" x="6" y="6" rx="18" ry="18" width="508" height="348"/>
+<rect class="frame" x="6" y="6" rx="18" ry="18" width="508" height="408"/>
 
 <text class="title" x="30" y="36">PHASE OF DAY</text>
 """
@@ -143,8 +104,7 @@ for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "S
 
 svg += "</svg>"
 
-# ================= WRITE =================
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Sharp, percentage-based WakaTime dashboard generated")
+print("✅ SVG generated (height fixed, real percentages)")
