@@ -12,6 +12,7 @@
 </style>
 
 <rect class="frame" x="6" y="6" rx="18" width="508" height="430"/>
+
 <text class="title" x="30" y="36">PHASE OF DAY</text>
 
     <text class="label" x="30" y="62">Morning</text>
@@ -26,8 +27,8 @@
     
     <text class="label" x="30" y="114">Evening</text>
     <rect class="bar-bg" x="160" y="104" width="260" height="12" rx="6"/>
-    <rect class="bar" x="160" y="104" width="4" height="12" rx="6"/>
-    <text class="value" x="450" y="115">0%</text>
+    <rect class="bar" x="160" y="104" width="142" height="12" rx="6"/>
+    <text class="value" x="450" y="115">100%</text>
     
     <text class="label" x="30" y="140">Night</text>
     <rect class="bar-bg" x="160" y="130" width="260" height="12" rx="6"/>
@@ -73,6 +74,6 @@
     <text class="value" x="450" y="365">0%</text>
     
 <text class="footer" x="30" y="422">
-Last updated: 28 Jan 2026 • 05:19 UTC
+Last updated: 28 Jan 2026 • 05:32 UTC
 </text>
 </svg>
