@@ -4,41 +4,50 @@ import base64
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-# ========= AUTH =========
+# ================= AUTH =================
 API_KEY = os.environ.get("WAKATIME_API_KEY")
 if not API_KEY:
-    raise RuntimeError("Missing API key")
+    raise RuntimeError("WAKATIME_API_KEY missing")
 
 auth = base64.b64encode(f"{API_KEY}:".encode()).decode()
 HEADERS = {"Authorization": f"Basic {auth}"}
 
-# ========= DATE RANGE =========
+# ================= TIMEZONE =================
+# IST (Asia/Kolkata)
+IST = timezone(timedelta(hours=5, minutes=30))
+
+# ================= DATE RANGE =================
 end = datetime.utcnow().date()
 start = end - timedelta(days=6)
 
-URL = (
+SUMMARIES_URL = (
     "https://wakatime.com/api/v1/users/current/summaries"
     f"?start={start}&end={end}"
 )
 
-summaries = requests.get(URL, headers=HEADERS).json().get("data", [])
+resp = requests.get(SUMMARIES_URL, headers=HEADERS)
+resp.raise_for_status()
+summaries = resp.json().get("data", [])
 
-# ========= BUCKETS =========
+# ================= BUCKETS =================
 phase_minutes = defaultdict(int)
-day_minutes = defaultdict(int)
+weekday_minutes = defaultdict(int)
 
-# ========= PARSE =========
+# ================= PARSE DATA =================
 for entry in summaries:
     try:
-        # Parse UTC time explicitly
-        start_time = datetime.fromisoformat(
+        # Parse UTC timestamp
+        utc_time = datetime.fromisoformat(
             entry["range"]["start"].replace("Z", "+00:00")
         )
 
+        # Convert to LOCAL time (IST)
+        local_time = utc_time.astimezone(IST)
+
         minutes = int(entry["grand_total"]["total_seconds"] / 60)
 
-        # ---- Phase of day (hour-based, correct) ----
-        hour = start_time.hour
+        # ---- Phase of day (LOCAL hour) ----
+        hour = local_time.hour
         if 5 <= hour < 12:
             phase_minutes["Morning"] += minutes
         elif 12 <= hour < 17:
@@ -48,50 +57,44 @@ for entry in summaries:
         else:
             phase_minutes["Night"] += minutes
 
-        # ---- Day of week (date-based, correct) ----
-        day_key = start_time.date()
-        day_minutes[day_key] += minutes
+        # ---- Day of week (LOCAL date) ----
+        weekday_minutes[local_time.strftime("%A")] += minutes
 
     except Exception:
         continue
 
-# Convert date → weekday
-weekday_minutes = defaultdict(int)
-for day, mins in day_minutes.items():
-    weekday_minutes[day.strftime("%A")] += mins
-
-# ========= HELPERS =========
-def pct(value, total):
+# ================= HELPERS =================
+def percent(value, total):
     return round((value / total) * 100) if total > 0 else 0
 
-def bar(y, label, percent):
-    width = int(260 * percent / 100)
+def bar(y, label, pct):
+    width = int(260 * pct / 100)
     return f"""
     <text class="label" x="30" y="{y}">{label}</text>
     <rect class="bar-bg" x="160" y="{y-10}" width="260" height="12" rx="6"/>
     <rect class="bar" x="160" y="{y-10}" width="{width}" height="12" rx="6"/>
-    <text class="value" x="450" y="{y+1}">{percent}%</text>
+    <text class="value" x="450" y="{y+1}">{pct}%</text>
     """
 
-# ========= TOTALS =========
-phase_total = sum(phase_minutes.values())
-week_total = sum(weekday_minutes.values())
-updated = datetime.utcnow().strftime("%d %b %Y • %H:%M UTC")
+# ================= TOTALS =================
+total_phase = sum(phase_minutes.values())
+total_week = sum(weekday_minutes.values())
+updated = datetime.now(IST).strftime("%d %b %Y • %H:%M IST")
 
 row_h = 26
 svg_height = 260 + 7 * row_h
 
-# ========= SVG =========
+# ================= SVG =================
 svg = f"""
 <svg width="520" height="{svg_height}" xmlns="http://www.w3.org/2000/svg">
 <style>
-.frame {{ fill:#050607; stroke:#00ff9c22; }}
-.title {{ fill:#00ff9c; font-family:monospace; font-size:13px; }}
+.frame {{ fill:#050607; stroke:#00ff9c22; stroke-width:1; }}
+.title {{ fill:#00ff9c; font-family:monospace; font-size:13px; letter-spacing:1px; }}
 .label {{ fill:#00ff9c; font-family:monospace; font-size:12px; }}
 .value {{ fill:#9fffe0; font-family:monospace; font-size:11px; text-anchor:end; }}
 .bar-bg {{ fill:#0f1a17; }}
 .bar {{ fill:#00ff9c; }}
-.divider {{ stroke:#00ff9c33; }}
+.divider {{ stroke:#00ff9c33; stroke-width:1; }}
 .footer {{ fill:#00ff9c66; font-family:monospace; font-size:10px; }}
 </style>
 
@@ -102,7 +105,7 @@ svg = f"""
 
 y = 62
 for k in ["Morning", "Daytime", "Evening", "Night"]:
-    svg += bar(y, k, pct(phase_minutes[k], phase_total))
+    svg += bar(y, k, percent(phase_minutes[k], total_phase))
     y += row_h
 
 svg += f"""
@@ -111,8 +114,8 @@ svg += f"""
 """
 
 y += 42
-for d in ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]:
-    svg += bar(y, d, pct(weekday_minutes[d], week_total))
+for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
+    svg += bar(y, d, percent(weekday_minutes[d], total_week))
     y += row_h
 
 svg += f"""
@@ -122,7 +125,8 @@ Last updated: {updated}
 </svg>
 """
 
+# ================= WRITE FILE =================
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Dashboard generated with truthful data")
+print("✅ WakaTime dashboard generated correctly (local time, truthful data)")
