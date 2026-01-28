@@ -13,7 +13,6 @@ auth = base64.b64encode(f"{API_KEY}:".encode()).decode()
 HEADERS = {"Authorization": f"Basic {auth}"}
 
 # ================= TIMEZONE =================
-# IST (Asia/Kolkata)
 IST = timezone(timedelta(hours=5, minutes=30))
 
 # ================= DATE RANGE =================
@@ -36,17 +35,14 @@ weekday_minutes = defaultdict(int)
 # ================= PARSE DATA =================
 for entry in summaries:
     try:
-        # Parse UTC timestamp
         utc_time = datetime.fromisoformat(
             entry["range"]["start"].replace("Z", "+00:00")
         )
-
-        # Convert to LOCAL time (IST)
         local_time = utc_time.astimezone(IST)
 
         minutes = int(entry["grand_total"]["total_seconds"] / 60)
 
-        # ---- Phase of day (LOCAL hour) ----
+        # ---- Phase of day ----
         hour = local_time.hour
         if 5 <= hour < 12:
             phase_minutes["Morning"] += minutes
@@ -57,28 +53,33 @@ for entry in summaries:
         else:
             phase_minutes["Night"] += minutes
 
-        # ---- Day of week (LOCAL date) ----
+        # ---- Day of week ----
         weekday_minutes[local_time.strftime("%A")] += minutes
 
     except Exception:
         continue
 
 # ================= HELPERS =================
-def percent(value, total):
-    return round((value / total) * 100) if total > 0 else 0
+def format_time(minutes: int) -> str:
+    h = minutes // 60
+    m = minutes % 60
+    if h > 0:
+        return f"{h}h {m}m"
+    return f"{m}m"
 
-def bar(y, label, pct):
-    width = int(260 * pct / 100)
+def bar(y, label, minutes, max_minutes):
+    width = int((minutes / max_minutes) * 260) if max_minutes > 0 else 0
     return f"""
     <text class="label" x="30" y="{y}">{label}</text>
     <rect class="bar-bg" x="160" y="{y-10}" width="260" height="12" rx="6"/>
     <rect class="bar" x="160" y="{y-10}" width="{width}" height="12" rx="6"/>
-    <text class="value" x="450" y="{y+1}">{pct}%</text>
+    <text class="value" x="450" y="{y+1}">{format_time(minutes)}</text>
     """
 
-# ================= TOTALS =================
-total_phase = sum(phase_minutes.values())
-total_week = sum(weekday_minutes.values())
+# ================= NORMALIZATION =================
+max_phase = max(phase_minutes.values(), default=0)
+max_weekday = max(weekday_minutes.values(), default=0)
+
 updated = datetime.now(IST).strftime("%d %b %Y • %H:%M IST")
 
 row_h = 26
@@ -105,7 +106,7 @@ svg = f"""
 
 y = 62
 for k in ["Morning", "Daytime", "Evening", "Night"]:
-    svg += bar(y, k, percent(phase_minutes[k], total_phase))
+    svg += bar(y, k, phase_minutes[k], max_phase)
     y += row_h
 
 svg += f"""
@@ -115,7 +116,7 @@ svg += f"""
 
 y += 42
 for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-    svg += bar(y, d, percent(weekday_minutes[d], total_week))
+    svg += bar(y, d, weekday_minutes[d], max_weekday)
     y += row_h
 
 svg += f"""
@@ -125,8 +126,8 @@ Last updated: {updated}
 </svg>
 """
 
-# ================= WRITE FILE =================
+# ================= WRITE =================
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ WakaTime dashboard generated correctly (local time, truthful data)")
+print("✅ WakaTime dashboard generated (HOURS ONLY, no percentages)")
