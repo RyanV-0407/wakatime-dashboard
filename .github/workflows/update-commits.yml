@@ -1,0 +1,27 @@
+name: Update Commits Dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - run: pip install requests
+
+      - run: python generate_commits.svg.py
+
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add commits.svg
+          git commit -m "update commits dashboard" || echo "no changes"
+          git push
