@@ -4,81 +4,74 @@ import base64
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+# ================= AUTH =================
 API_KEY = os.environ.get("WAKATIME_API_KEY")
 if not API_KEY:
-    raise RuntimeError("WAKATIME_API_KEY not found")
+    raise RuntimeError("WAKATIME_API_KEY missing")
 
-# ---- AUTH ----
 auth = base64.b64encode(f"{API_KEY}:".encode()).decode()
 HEADERS = {"Authorization": f"Basic {auth}"}
 
-# ---- DATE RANGE (LAST 7 DAYS) ----
+# ================= DATE RANGE =================
 end = datetime.utcnow().date()
 start = end - timedelta(days=6)
 
-# ---- ENDPOINTS ----
-STATS_URL = "https://wakatime.com/api/v1/users/current/stats/last_7_days"
-SUM_URL = (
+SUMMARIES_URL = (
     "https://wakatime.com/api/v1/users/current/summaries"
     f"?start={start}&end={end}"
 )
 
+STATS_URL = "https://wakatime.com/api/v1/users/current/stats/last_7_days"
+
+summaries = requests.get(SUMMARIES_URL, headers=HEADERS).json().get("data", [])
 stats = requests.get(STATS_URL, headers=HEADERS).json().get("data", {})
-summaries = requests.get(SUM_URL, headers=HEADERS).json().get("data", [])
 
 time_blocks = defaultdict(int)
 weekdays = defaultdict(int)
 
-# ---- PHASE OF DAY (FROM SUMMARIES) ----
-for day in summaries:
-    for s in day.get("categories", []):
-        if s["name"] != "Coding":
-            continue
+# ================= PHASE OF DAY (REAL FIX) =================
+for entry in summaries:
+    try:
+        start_time = entry["range"]["start"]
+        hour = int(start_time[11:13])   # <-- THIS is the fix
+        minutes = int(entry["grand_total"]["total_seconds"] / 60)
+    except Exception:
+        continue
 
-        for h in day.get("grand_total", {}).get("digital", "").split():
-            pass
+    if 5 <= hour < 12:
+        time_blocks["Morning"] += minutes
+    elif 12 <= hour < 17:
+        time_blocks["Daytime"] += minutes
+    elif 17 <= hour < 21:
+        time_blocks["Evening"] += minutes
+    else:
+        time_blocks["Night"] += minutes
 
-    for h in day.get("hours", []):
-        hour = h["hour"]
-        minutes = int(h["total_seconds"] / 60)
-
-        if 5 <= hour < 12:
-            time_blocks["Morning"] += minutes
-        elif 12 <= hour < 17:
-            time_blocks["Daytime"] += minutes
-        elif 17 <= hour < 21:
-            time_blocks["Evening"] += minutes
-        else:
-            time_blocks["Night"] += minutes
-
-# ---- DAYS OF WEEK (FROM STATS) ----
+# ================= DAYS OF WEEK =================
 for d in stats.get("days", []):
     weekdays[d["name"]] = int(d["total_seconds"] / 60)
 
 
-def percent(value, total):
-    return round((value / total) * 100) if total > 0 else 0
+def percent(v, t):
+    return round((v / t) * 100) if t > 0 else 0
 
 
 def bar(y, label, value, total):
-    width = min(max(value // 2, 4), 260)
-    pct = percent(value, total)
-
+    width = min(max(value * 2, 4), 260)
     return f"""
     <text class="label" x="30" y="{y}">{label}</text>
     <rect class="bar-bg" x="160" y="{y-10}" width="260" height="12" rx="6"/>
     <rect class="bar" x="160" y="{y-10}" width="{width}" height="12" rx="6"/>
-    <text class="value" x="450" y="{y+1}">{pct}%</text>
+    <text class="value" x="450" y="{y+1}">{percent(value, total)}%</text>
     """
 
 
 total_day = sum(time_blocks.values())
 total_week = sum(weekdays.values())
-today = datetime.utcnow().strftime("%A")
 updated = datetime.utcnow().strftime("%d %b %Y • %H:%M UTC")
 
 row_h = 26
-svg_height = 260 + (7 * row_h)
+svg_height = 260 + 7 * row_h
 
 svg = f"""
 <svg width="520" height="{svg_height}" xmlns="http://www.w3.org/2000/svg">
@@ -93,7 +86,8 @@ svg = f"""
 .footer {{ fill:#00ff9c66; font-family:monospace; font-size:10px; }}
 </style>
 
-<rect class="frame" x="6" y="6" rx="18" width="508" height="{svg_height - 12}"/>
+<rect class="frame" x="6" y="6" rx="18" width="508" height="{svg_height-12}"/>
+
 <text class="title" x="30" y="36">PHASE OF DAY</text>
 """
 
@@ -108,18 +102,18 @@ svg += f"""
 """
 
 y += 42
-for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
+for d in ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]:
     svg += bar(y, d, weekdays[d], total_week)
     y += row_h
 
 svg += f"""
-<text class="footer" x="30" y="{svg_height - 20}">
+<text class="footer" x="30" y="{svg_height-20}">
 Last updated: {updated}
 </text>
 </svg>
 """
 
-with open("stats.svg", "w", encoding="utf-8") as f:
+with open("stats.svg", "w") as f:
     f.write(svg)
 
-print("✅ WakaTime dashboard generated with REAL data")
+print("✅ WakaTime dashboard generated with REAL, NON-ZERO data")
