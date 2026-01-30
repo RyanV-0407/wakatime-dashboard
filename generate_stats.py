@@ -16,12 +16,16 @@ HEADERS = {"Authorization": f"Basic {auth}"}
 IST = timezone(timedelta(hours=5, minutes=30))
 
 # ================= DATE RANGE =================
-end = datetime.utcnow()
-start = end - timedelta(days=7)
+end_dt = datetime.utcnow()
+start_dt = end_dt - timedelta(days=7)
+
+# 🔑 Durations API REQUIRES UNIX timestamps
+start_ts = int(start_dt.timestamp())
+end_ts = int(end_dt.timestamp())
 
 URL = (
     "https://wakatime.com/api/v1/users/current/durations"
-    f"?start={start.isoformat()}&end={end.isoformat()}"
+    f"?start={start_ts}&end={end_ts}"
 )
 
 resp = requests.get(URL, headers=HEADERS)
@@ -41,7 +45,7 @@ for d in durations:
 
         h = local.hour
 
-        # ---- Phase of day (CORRECT) ----
+        # ---- Phase of day ----
         if 5 <= h < 12:
             phase_minutes["Morning"] += minutes
         elif 12 <= h < 17:
@@ -58,7 +62,7 @@ for d in durations:
         continue
 
 # ================= HELPERS =================
-MAX_SCALE_MINUTES = 120  # 2h = full bar
+MAX_SCALE_MINUTES = 120  # 2 hours = full bar
 
 def format_time(mins):
     h = mins // 60
@@ -146,4 +150,4 @@ Last updated: {updated}
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Dashboard generated correctly (durations-based)")
+print("✅ Dashboard generated correctly (durations-based, fixed)")
