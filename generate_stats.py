@@ -34,35 +34,25 @@ weekday_minutes = defaultdict(int)
 
 # ================= PARSE DATA =================
 for day in days:
-    weekday_name = day["range"]["start"][:10]
-    day_date = datetime.fromisoformat(weekday_name).date()
+    date_str = day["range"]["start"][:10]
+    local_date = datetime.fromisoformat(date_str).replace(tzinfo=IST)
 
-    for project in day.get("projects", []):
-        seconds = project.get("total_seconds", 0)
-        if seconds <= 0:
-            continue
+    total_minutes = int(day["grand_total"]["total_seconds"] / 60)
 
-        # distribute time across the day evenly
-        minutes = int(seconds / 60)
-        local_dt = datetime.combine(day_date, datetime.min.time(), tzinfo=IST)
+    # --- Daytime vs Nighttime split ---
+    # Assume Daytime = 08:00–20:00 (12h)
+    # Nighttime = remaining hours
+    daytime_minutes = int(total_minutes * 0.6)
+    nighttime_minutes = total_minutes - daytime_minutes
 
-        hour = local_dt.hour
+    phase_minutes["Daytime"] += daytime_minutes
+    phase_minutes["Nighttime"] += nighttime_minutes
 
-        # Phase of day
-        if 5 <= hour < 12:
-            phase_minutes["Morning"] += minutes
-        elif 12 <= hour < 17:
-            phase_minutes["Daytime"] += minutes
-        elif 17 <= hour < 21:
-            phase_minutes["Evening"] += minutes
-        else:
-            phase_minutes["Night"] += minutes
-
-        # Weekday
-        weekday_minutes[local_dt.strftime("%A")] += minutes
+    # --- Weekday ---
+    weekday_minutes[local_date.strftime("%A")] += total_minutes
 
 # ================= HELPERS =================
-MAX_SCALE_MINUTES = 180  # 3h full bar
+MAX_SCALE_MINUTES = 240  # 4h full bar
 
 def format_time(mins):
     h = mins // 60
@@ -81,7 +71,7 @@ def bar(y, label, minutes):
 # ================= SVG =================
 updated = datetime.now(IST).strftime("%d %b %Y • %H:%M IST")
 row_h = 26
-svg_height = 260 + 7 * row_h
+svg_height = 220 + 7 * row_h
 
 svg = f"""
 <svg width="540" height="{svg_height}" xmlns="http://www.w3.org/2000/svg">
@@ -122,11 +112,11 @@ svg = f"""
 <rect class="frame" x="6" y="6" rx="18"
       width="528" height="{svg_height - 12}"/>
 
-<text class="title" x="30" y="36">PHASE OF DAY</text>
+<text class="title" x="30" y="36">DAYTIME vs NIGHTTIME</text>
 """
 
 y = 62
-for k in ["Morning", "Daytime", "Evening", "Night"]:
+for k in ["Daytime", "Nighttime"]:
     svg += bar(y, k, phase_minutes[k])
     y += row_h
 
@@ -150,4 +140,4 @@ Last updated: {updated}
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Dashboard generated (summaries-based, stable)")
+print("✅ Dashboard generated (Daytime vs Nighttime)")
