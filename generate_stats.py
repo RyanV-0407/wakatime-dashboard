@@ -16,34 +16,32 @@ HEADERS = {"Authorization": f"Basic {auth}"}
 IST = timezone(timedelta(hours=5, minutes=30))
 
 # ================= DATE RANGE =================
-end = datetime.utcnow().date()
-start = end - timedelta(days=6)
+end = datetime.utcnow()
+start = end - timedelta(days=7)
 
 URL = (
-    "https://wakatime.com/api/v1/users/current/summaries"
-    f"?start={start}&end={end}"
+    "https://wakatime.com/api/v1/users/current/durations"
+    f"?start={start.isoformat()}&end={end.isoformat()}"
 )
 
 resp = requests.get(URL, headers=HEADERS)
 resp.raise_for_status()
-summaries = resp.json().get("data", [])
+durations = resp.json().get("data", [])
 
 # ================= BUCKETS =================
 phase_minutes = defaultdict(int)
 weekday_minutes = defaultdict(int)
 
-# ================= PARSE DATA =================
-for entry in summaries:
+# ================= PARSE REAL DATA =================
+for d in durations:
     try:
-        utc = datetime.fromisoformat(
-            entry["range"]["start"].replace("Z", "+00:00")
-        )
-        local = utc.astimezone(IST)
+        start_utc = datetime.fromtimestamp(d["time"], tz=timezone.utc)
+        local = start_utc.astimezone(IST)
+        minutes = int(d["duration"] / 60)
 
-        minutes = int(entry["grand_total"]["total_seconds"] / 60)
-
-        # Phase of day
         h = local.hour
+
+        # ---- Phase of day (CORRECT) ----
         if 5 <= h < 12:
             phase_minutes["Morning"] += minutes
         elif 12 <= h < 17:
@@ -53,14 +51,14 @@ for entry in summaries:
         else:
             phase_minutes["Night"] += minutes
 
-        # Day of week
+        # ---- Day of week ----
         weekday_minutes[local.strftime("%A")] += minutes
 
     except Exception:
         continue
 
 # ================= HELPERS =================
-MAX_SCALE_MINUTES = 120  # 2 hours = full bar
+MAX_SCALE_MINUTES = 120  # 2h = full bar
 
 def format_time(mins):
     h = mins // 60
@@ -76,11 +74,11 @@ def bar(y, label, minutes):
     <text class="value" x="460" y="{y+1}">{format_time(minutes)}</text>
     """
 
+# ================= SVG =================
 updated = datetime.now(IST).strftime("%d %b %Y • %H:%M IST")
 row_h = 26
 svg_height = 260 + 7 * row_h
 
-# ================= SVG =================
 svg = f"""
 <svg width="540" height="{svg_height}" xmlns="http://www.w3.org/2000/svg">
 <style>
@@ -148,4 +146,4 @@ Last updated: {updated}
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Dashboard generated (fixed scale, clear labels)")
+print("✅ Dashboard generated correctly (durations-based)")
