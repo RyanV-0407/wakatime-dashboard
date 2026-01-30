@@ -15,54 +15,64 @@ HEADERS = {"Authorization": f"Basic {auth}"}
 # ================= TIMEZONE =================
 IST = timezone(timedelta(hours=5, minutes=30))
 
-# ================= DATE RANGE =================
-end_dt = datetime.utcnow()
-start_dt = end_dt - timedelta(days=7)
-
-# 🔑 Durations API REQUIRES UNIX timestamps
-start_ts = int(start_dt.timestamp())
-end_ts = int(end_dt.timestamp())
-
-URL = (
-    "https://wakatime.com/api/v1/users/current/durations"
-    f"?start={start_ts}&end={end_ts}"
-)
-
-resp = requests.get(URL, headers=HEADERS)
-resp.raise_for_status()
-durations = resp.json().get("data", [])
+# ================= CONFIG =================
+DAYS = 7
+BASE_URL = "https://wakatime.com/api/v1/users/current/durations"
 
 # ================= BUCKETS =================
 phase_minutes = defaultdict(int)
 weekday_minutes = defaultdict(int)
 
-# ================= PARSE REAL DATA =================
-for d in durations:
-    try:
-        start_utc = datetime.fromtimestamp(d["time"], tz=timezone.utc)
-        local = start_utc.astimezone(IST)
-        minutes = int(d["duration"] / 60)
+# ================= FETCH PER DAY =================
+now_utc = datetime.utcnow()
 
-        h = local.hour
+for i in range(DAYS):
+    day_start = (now_utc - timedelta(days=i)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    day_end = day_start + timedelta(days=1)
 
-        # ---- Phase of day ----
-        if 5 <= h < 12:
-            phase_minutes["Morning"] += minutes
-        elif 12 <= h < 17:
-            phase_minutes["Daytime"] += minutes
-        elif 17 <= h < 21:
-            phase_minutes["Evening"] += minutes
-        else:
-            phase_minutes["Night"] += minutes
+    start_ts = int(day_start.timestamp())
+    end_ts = int(day_end.timestamp())
 
-        # ---- Day of week ----
-        weekday_minutes[local.strftime("%A")] += minutes
+    resp = requests.get(
+        f"{BASE_URL}?start={start_ts}&end={end_ts}",
+        headers=HEADERS,
+        timeout=10
+    )
 
-    except Exception:
+    # Skip empty / inactive days safely
+    if resp.status_code != 200:
         continue
 
+    durations = resp.json().get("data", [])
+
+    for d in durations:
+        try:
+            start_utc = datetime.fromtimestamp(d["time"], tz=timezone.utc)
+            local = start_utc.astimezone(IST)
+            minutes = int(d["duration"] / 60)
+
+            h = local.hour
+
+            # ---- Phase of day (CORRECT) ----
+            if 5 <= h < 12:
+                phase_minutes["Morning"] += minutes
+            elif 12 <= h < 17:
+                phase_minutes["Daytime"] += minutes
+            elif 17 <= h < 21:
+                phase_minutes["Evening"] += minutes
+            else:
+                phase_minutes["Night"] += minutes
+
+            # ---- Day of week ----
+            weekday_minutes[local.strftime("%A")] += minutes
+
+        except Exception:
+            continue
+
 # ================= HELPERS =================
-MAX_SCALE_MINUTES = 120  # 2 hours = full bar
+MAX_SCALE_MINUTES = 120  # 2h = full bar
 
 def format_time(mins):
     h = mins // 60
@@ -150,4 +160,4 @@ Last updated: {updated}
 with open("stats.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 
-print("✅ Dashboard generated correctly (durations-based, fixed)")
+print("✅ Dashboard generated (durations API, per-day fetch)")
