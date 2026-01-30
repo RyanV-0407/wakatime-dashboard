@@ -57,7 +57,7 @@
     <text class="label" x="30" y="140">Night</text>
     <rect class="bar-bg" x="160" y="130" width="260" height="12" rx="6"/>
     <rect class="bar" x="160" y="130" width="260" height="12" rx="6"/>
-    <text class="value" x="460" y="141">3h 9m</text>
+    <text class="value" x="460" y="141">3h 43m</text>
     
 <line class="divider" x1="30" y1="156" x2="510" y2="156"/>
 <text class="title" x="30" y="182">DAYS OF WEEK</text>
@@ -75,7 +75,7 @@
     <text class="label" x="30" y="260">Wednesday</text>
     <rect class="bar-bg" x="160" y="250" width="260" height="12" rx="6"/>
     <rect class="bar" x="160" y="250" width="260" height="12" rx="6"/>
-    <text class="value" x="460" y="261">2h 32m</text>
+    <text class="value" x="460" y="261">2h 33m</text>
     
     <text class="label" x="30" y="286">Thursday</text>
     <rect class="bar-bg" x="160" y="276" width="260" height="12" rx="6"/>
@@ -84,8 +84,8 @@
     
     <text class="label" x="30" y="312">Friday</text>
     <rect class="bar-bg" x="160" y="302" width="260" height="12" rx="6"/>
-    <rect class="bar" x="160" y="302" width="0" height="12" rx="6"/>
-    <text class="value" x="460" y="313">0m</text>
+    <rect class="bar" x="160" y="302" width="71" height="12" rx="6"/>
+    <text class="value" x="460" y="313">33m</text>
     
     <text class="label" x="30" y="338">Saturday</text>
     <rect class="bar-bg" x="160" y="328" width="260" height="12" rx="6"/>
@@ -98,6 +98,6 @@
     <text class="value" x="460" y="365">0m</text>
     
 <text class="footer" x="30" y="422">
-Last updated: 30 Jan 2026 • 06:58 IST
+Last updated: 30 Jan 2026 • 12:10 IST
 </text>
 </svg>
