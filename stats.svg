@@ -41,21 +41,21 @@
 
     <text class="label" x="30" y="62">Daytime</text>
     <rect class="bar-bg" x="160" y="52" width="260" height="12" rx="6"/>
-    <rect class="bar" x="160" y="52" width="237" height="12" rx="6"/>
-    <text class="value" x="460" y="63">3h 39m</text>
+    <rect class="bar" x="160" y="52" width="213" height="12" rx="6"/>
+    <text class="value" x="460" y="63">3h 17m</text>
     
     <text class="label" x="30" y="88">Nighttime</text>
     <rect class="bar-bg" x="160" y="78" width="260" height="12" rx="6"/>
-    <rect class="bar" x="160" y="78" width="161" height="12" rx="6"/>
-    <text class="value" x="460" y="89">2h 29m</text>
+    <rect class="bar" x="160" y="78" width="145" height="12" rx="6"/>
+    <text class="value" x="460" y="89">2h 14m</text>
     
 <line class="divider" x1="30" y1="104" x2="510" y2="104"/>
 <text class="title" x="30" y="130">DAYS OF WEEK</text>
 
     <text class="label" x="30" y="156">Monday</text>
     <rect class="bar-bg" x="160" y="146" width="260" height="12" rx="6"/>
-    <rect class="bar" x="160" y="146" width="40" height="12" rx="6"/>
-    <text class="value" x="460" y="157">37m</text>
+    <rect class="bar" x="160" y="146" width="0" height="12" rx="6"/>
+    <text class="value" x="460" y="157">0m</text>
     
     <text class="label" x="30" y="182">Tuesday</text>
     <rect class="bar-bg" x="160" y="172" width="260" height="12" rx="6"/>
@@ -88,6 +88,6 @@
     <text class="value" x="460" y="313">0m</text>
     
 <text class="footer" x="30" y="382">
-Last updated: 03 Feb 2026 • 00:05 IST
+Last updated: 03 Feb 2026 • 07:15 IST
 </text>
 </svg>
